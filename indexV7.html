@@ -45,7 +45,7 @@
         .solved .mrna-row input,
         .solved .mrna-row.hint { 
             /* Alternates between white and orange 3 times over 1.5s */
-            animation: toggleSolved 0.5s step-end 3 forwards; 
+            animation: toggleSolved 0.5s step-end 14 forwards; 
         }
 
         @keyframes toggleSolved {
@@ -57,14 +57,14 @@
         /* Ensure the side labels only appear after the 3rd toggle is finished */
         .solved .end-cap { 
             opacity: 1; 
-            transition: opacity 0.5s ease 1.5s; 
+            transition: opacity 0.5s ease 5.5s; 
         }
 
         /* Ensures inputs inside the row also blink their text color */
         .solved .mrna-row,
         .solved .mrna-row .input,
         .solved .mrna-row .hint {
-            animation: toggleText 0.5s step-end 3 forwards;
+            animation: toggleText 0.5s step-end 14 forwards;
         }
 
         @keyframes toggleText {
@@ -75,9 +75,24 @@
         .controls { margin-top: 20px; display: flex; gap: 20px; align-items: center; }
         #status { font-weight: bold; font-size: 1.2rem; color: #333; }
         .btn-reset { padding: 8px 16px; cursor: pointer; background: #444; color: white; border: none; border-radius: 4px; font-family: inherit; }
+
+        #confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            pointer-events: none;
+            opacity: 0;
+            display: none;
+            transition: opacity 1s ease;
+            z-index: 9999;
+        }
     </style>
 </head>
 <body>
+<img id="confetti" src="assets/images/confetti01.gif" alt="Confetti celebration">
 
 <audio id="successSound" src="assets/sounds/[INSTRUMENTAL] Pitbull - Fireball.mp3" preload="auto"></audio>
 
@@ -114,6 +129,7 @@
         [11,1,'N'], [11,3,'I'], [11,5,'O'], [11,7,'Y'] // Antibody
     ];
 
+    const CONFETTI_FALLBACK_DURATION = 4280; // ms (used if GIF loop count can't be detected)
     const grid = document.getElementById('grid');
 
     function buildGrid() {
@@ -149,7 +165,7 @@
     let hasPlayed = false;
     const SOUND_START_TIME = 31.85; // seconds (change this value to adjust start point)
     const SOUND_PLAY_DURATION = 17; // seconds before fade out starts
-    const FADE_OUT_DURATION = 2; // seconds for fade out
+    const FADE_OUT_DURATION = 3; // seconds for fade out
 
     function checkPuzzle() {
         const inputs = document.querySelectorAll('input');
@@ -160,13 +176,29 @@
 
         if (isComplete) {
             document.body.classList.add('solved');
+            const confetti = document.getElementById('confetti');
+
+            // Restart GIF animation
+            confetti.style.display = 'none';
+            confetti.offsetHeight; // force reflow
+            confetti.style.display = 'block';
+            confetti.style.opacity = '1';
+
+            // Fallback: fade out after fixed time (GIF loop count cannot be reliably detected)
+            setTimeout(() => {
+                confetti.style.opacity = '0';
+                setTimeout(() => {
+                    confetti.style.display = 'none';
+                }, 700); // match CSS transition
+            }, CONFETTI_FALLBACK_DURATION);
+
             document.getElementById('status').innerText = "SEQUENCE REVEALED: AUG GAU GAC UAA";
             
             // ADD THESE LINES TO PLAY SOUND
             if (!hasPlayed) {
                 const audio = document.getElementById('successSound');
                 audio.currentTime = SOUND_START_TIME;
-                audio.volume = 0.8;
+                audio.volume = 0.35;
                 audio.play();
 
                 // Start fade-out after SOUND_PLAY_DURATION
@@ -177,7 +209,8 @@
 
                     const fade = setInterval(() => {
                         step++;
-                        audio.volume = Math.max(0, 1 - step / fadeSteps);
+                        const startVolume = audio.volume;
+                        audio.volume = Math.max(0, startVolume * (1 - step / fadeSteps));
 
                         if (audio.volume === 0) {
                             audio.pause();
@@ -190,6 +223,9 @@
             }
         } else {
             document.body.classList.remove('solved');
+            const confetti = document.getElementById('confetti');
+            confetti.style.opacity = '0';
+            confetti.style.display = 'none';
             document.getElementById('status').innerText = "ANALYZING GENETIC SAMPLES...";
             hasPlayed = false; // Reset so sound can play again if they fix a mistake
         }
@@ -213,6 +249,9 @@
         if(confirm("Clear all inputs?")) {
             hasPlayed = false;
             document.body.classList.remove('solved');
+            const confetti = document.getElementById('confetti');
+            confetti.style.opacity = '0';
+            confetti.style.display = 'none';
             document.getElementById('status').innerText = "ANALYZING GENETIC SAMPLES...";
             buildGrid();
         }
