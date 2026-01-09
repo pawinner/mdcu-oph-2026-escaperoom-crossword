@@ -79,7 +79,7 @@
 </head>
 <body>
 
-<audio id="successSound" src="assets/sounds/BGT Break.mp3" preload="auto"></audio>
+<audio id="successSound" src="assets/sounds/[INSTRUMENTAL] Pitbull - Fireball.mp3" preload="auto"></audio>
 
 <div class="grid" id="grid"></div>
 
@@ -147,7 +147,9 @@
     }
 
     let hasPlayed = false;
-    const SOUND_START_TIME = 0.5; // seconds (change this value to adjust start point)
+    const SOUND_START_TIME = 31.85; // seconds (change this value to adjust start point)
+    const SOUND_PLAY_DURATION = 16; // seconds before fade out starts
+    const FADE_OUT_DURATION = 1.5; // seconds for fade out
 
     function checkPuzzle() {
         const inputs = document.querySelectorAll('input');
@@ -164,7 +166,26 @@
             if (!hasPlayed) {
                 const audio = document.getElementById('successSound');
                 audio.currentTime = SOUND_START_TIME;
+                audio.volume = 1;
                 audio.play();
+
+                // Start fade-out after SOUND_PLAY_DURATION
+                setTimeout(() => {
+                    const fadeInterval = 50; // ms
+                    const fadeSteps = FADE_OUT_DURATION * 1000 / fadeInterval;
+                    let step = 0;
+
+                    const fade = setInterval(() => {
+                        step++;
+                        audio.volume = Math.max(0, 1 - step / fadeSteps);
+
+                        if (audio.volume === 0) {
+                            audio.pause();
+                            clearInterval(fade);
+                        }
+                    }, fadeInterval);
+                }, SOUND_PLAY_DURATION * 1000);
+
                 hasPlayed = true;
             }
         } else {
