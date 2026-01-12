@@ -45,26 +45,27 @@
         .solved .mrna-row input,
         .solved .mrna-row.hint { 
             /* Alternates between white and orange 3 times over 1.5s */
-            animation: toggleSolved 0.5s step-end 14 forwards; 
+            animation: toggleSolved 0.488s step-end 16 forwards; 
         }
 
         @keyframes toggleSolved {
-            0% { background: white; color: black; }
-            50% { background: var(--mrna-color); color: white; }
+            0%   { background: var(--mrna-color); color: white; }
+            50%  { background: white; color: black; }
             100% { background: var(--mrna-color); color: white; }
-        }
+}
+        
 
         /* Ensure the side labels only appear after the 3rd toggle is finished */
         .solved .end-cap { 
             opacity: 1; 
-            transition: opacity 0.5s ease 5.5s; 
+            transition: opacity 0.5s ease 5.856s; 
         }
 
         /* Ensures inputs inside the row also blink their text color */
         .solved .mrna-row,
         .solved .mrna-row .input,
         .solved .mrna-row .hint {
-            animation: toggleText 0.5s step-end 14 forwards;
+            animation: toggleText 0.488s step-end 16 forwards;
         }
 
         @keyframes toggleText {
