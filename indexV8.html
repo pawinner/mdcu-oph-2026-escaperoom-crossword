@@ -169,7 +169,7 @@
                         let hintClass = isMrna ? "cell mrna-row hint" : "cell hint";
                         grid.innerHTML += `<div class="${hintClass}">${hintFound[2]}</div>`;
                     } else {
-                        grid.innerHTML += `<div class="${cellClass}"><input type="text" maxlength="1" data-word="${c}" data-idx="${charPos}" oninput="checkPuzzle()"></div>`;
+                        grid.innerHTML += `<div class="${cellClass}"><input type="text" maxlength="1" data-word="${c}" data-idx="${charPos}" oninput="handleInput(this)"></div>`;
                     }
                 } else {
                     grid.innerHTML += `<div class="empty"></div>`;
@@ -184,6 +184,87 @@
     const SOUND_START_TIME = 31.85; // seconds (change this value to adjust start point)
     const SOUND_PLAY_DURATION = 17; // seconds before fade out starts
     const FADE_OUT_DURATION = 3; // seconds for fade out
+
+    function handleInput(input) {
+        // Always re-check puzzle state
+        checkPuzzle();
+
+        // Only auto-move if a character was entered
+        if (!input.value) return;
+
+        const col = parseInt(input.dataset.word);
+        const idx = parseInt(input.dataset.idx);
+
+        let nextIdx = idx + 1;
+
+        // Scan downward until we find the next valid input
+        while (true) {
+            const next = document.querySelector(
+                `input[data-word="${col}"][data-idx="${nextIdx}"]`
+            );
+
+            if (next) {
+                next.focus();
+                next.select();
+                return;
+            }
+
+            // Stop if we are clearly out of bounds
+            if (nextIdx > WORDS[col].length) return;
+
+            nextIdx++;
+        }
+    }
+
+    function handleArrowNavigation(e) {
+        const key = e.key;
+        if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) return;
+
+        const current = e.target;
+        if (!current.matches('input')) return;
+
+        e.preventDefault();
+
+        const col = parseInt(current.dataset.word);
+        const idx = parseInt(current.dataset.idx);
+
+        let dCol = 0;
+        let dIdx = 0;
+
+        switch (key) {
+            case "ArrowUp":    dIdx = -1; break;
+            case "ArrowDown":  dIdx =  1; break;
+            case "ArrowLeft":  dCol = -1; break;
+            case "ArrowRight": dCol =  1; break;
+        }
+
+        let nextCol = col + dCol;
+        let nextIdx = idx + dIdx;
+
+        // Keep moving in the same direction until we find an input or go out of bounds
+        while (true) {
+            const next = document.querySelector(
+                `input[data-word="${nextCol}"][data-idx="${nextIdx}"]`
+            );
+
+            if (next) {
+                next.focus();
+                next.select();
+                return;
+            }
+
+            // Stop if we are clearly outside reasonable bounds
+            if (
+                nextCol < 0 || nextCol >= WORDS.length ||
+                nextIdx < 0 || nextIdx > 30
+            ) {
+                return;
+            }
+
+            nextCol += dCol;
+            nextIdx += dIdx;
+        }
+    }
 
     function checkPuzzle() {
         checkColumns();
@@ -320,6 +401,8 @@
 
     buildGrid();
     checkColumns();
+
+    grid.addEventListener('keydown', handleArrowNavigation);
 </script>
 </body>
 </html>
