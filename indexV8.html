@@ -23,7 +23,19 @@
         .mrna-row { background: white; }
         .empty { background: transparent; }
         .hint { background: #eeeeee ; color: #df599cf9; font-size: 1.7rem; pointer-events: none; user-select: none; }
-        .label { background: #eee; font-size: 1.7rem; border: none; }
+        .label { 
+            background: #c0392b; 
+            color: white;
+            font-size: 1.7rem; 
+            border: none; 
+            transition: background-color 0.35s ease, color 0.35s ease;
+        }
+
+        .label.solved-word {
+            background: #27ae60;
+            color: white;
+        }
+
         
         /* Hidden labels initially */
         .end-cap { 
@@ -95,7 +107,9 @@
 <body>
 <img id="confetti" src="assets/images/confetti01.gif" alt="Confetti celebration">
 
+
 <audio id="successSound" src="assets/sounds/[INSTRUMENTAL] Pitbull - Fireball.mp3" preload="auto"></audio>
+<audio id="columnSound" src="https://www.myinstants.com/media/sounds/winner-bell-game-show-sound-effect.mp3" preload="auto"></audio>
 
 <div class="grid" id="grid"></div>
 
@@ -136,7 +150,9 @@
     function buildGrid() {
         grid.innerHTML = "";
         grid.innerHTML += `<div class="empty"></div>`;
-        for(let i=1; i<=12; i++) grid.innerHTML += `<div class="cell label">${i}</div>`;
+        for(let i=1; i<=12; i++) {
+            grid.innerHTML += `<div class="cell label" data-col="${i-1}">${i}</div>`;
+        }
         grid.innerHTML += `<div class="empty"></div>`;
 
         for (let r = 0; r < 18; r++) {
@@ -164,11 +180,13 @@
     }
 
     let hasPlayed = false;
+    const solvedColumns = new Set();
     const SOUND_START_TIME = 31.85; // seconds (change this value to adjust start point)
     const SOUND_PLAY_DURATION = 17; // seconds before fade out starts
     const FADE_OUT_DURATION = 3; // seconds for fade out
 
     function checkPuzzle() {
+        checkColumns();
         const inputs = document.querySelectorAll('input');
         let isComplete = true;
         inputs.forEach(inp => {
@@ -232,6 +250,46 @@
         }
     }
 
+    function checkColumns() {
+        const labels = document.querySelectorAll('.label[data-col]');
+
+        labels.forEach(label => {
+            const col = parseInt(label.dataset.col);
+            const inputs = document.querySelectorAll(`input[data-word="${col}"]`);
+
+            let correct = true;
+            inputs.forEach(inp => {
+                if (inp.value.toUpperCase() !== WORDS[col][inp.dataset.idx]) {
+                    correct = false;
+                }
+            });
+
+            if (inputs.length === 0) {
+                // Fully pre-filled column → always correct
+                label.classList.add('solved-word');
+
+                // Do NOT play sound for prefilled columns
+                solvedColumns.add(col);
+                return;
+            }
+
+            if (correct) {
+                label.classList.add('solved-word');
+
+                if (!solvedColumns.has(col)) {
+                    solvedColumns.add(col);
+                    const sound = document.getElementById('columnSound');
+                    sound.currentTime = 0;
+                    sound.volume = 0.5;
+                    sound.play();
+                }
+            } else {
+                label.classList.remove('solved-word');
+                solvedColumns.delete(col);
+            }
+        });
+    }
+
     function fillDebug() {
         const inputs = document.querySelectorAll('input');
         inputs.forEach(inp => {
@@ -249,16 +307,19 @@
     function resetPuzzle() {
         if(confirm("Clear all inputs?")) {
             hasPlayed = false;
+            solvedColumns.clear();
             document.body.classList.remove('solved');
             const confetti = document.getElementById('confetti');
             confetti.style.opacity = '0';
             confetti.style.display = 'none';
             document.getElementById('status').innerText = "ANALYZING GENETIC SAMPLES...";
             buildGrid();
+            checkColumns();
         }
     }
 
     buildGrid();
+    checkColumns();
 </script>
 </body>
 </html>
